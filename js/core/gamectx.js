@@ -50,6 +50,8 @@
       failCount: opts.failCount || 0,   // 本次游戏会话中该小游戏已失败的次数（>=2 时建议显示跳过按钮）
       audio: opts.audio || GF.audio || stubAudio,
       toLocal: function (evt) {
+        // 游戏里用引擎的换算（支持手机竖屏时的旋转）；独立测试台没有引擎时用下面的普通换算
+        if (GF.E && GF.E.toLocal && GF.E.D && GF.E.D.stage === stage) return GF.E.toLocal(evt);
         var r = stage.getBoundingClientRect();
         var t = (evt.touches && evt.touches[0]) || (evt.changedTouches && evt.changedTouches[0]) || evt;
         return { x: (t.clientX - r.left) * 1600 / r.width, y: (t.clientY - r.top) * 900 / r.height };

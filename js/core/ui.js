@@ -78,11 +78,6 @@
       mb.addEventListener('click', function (e) { e.stopPropagation(); UI.touchMenu(); });
       d.stage.appendChild(mb);
     }
-    // 竖屏提示（仅手机竖屏时由 CSS 显示），可选择仍然继续
-    var rh = h('div', '', '<div class="rh-box"><div class="rh-phone"></div><p>请把手机横过来游玩</p><small>横屏时画面和文字会大很多</small><button>仍然竖屏继续</button></div>');
-    rh.id = 'rotate-hint';
-    rh.querySelector('button').addEventListener('click', function () { rh.classList.add('dismissed'); });
-    d.viewport.appendChild(rh);
     // 心神指示
     d.sanity.innerHTML = '<div class="sn-label">心神</div><svg class="sn-ecg" viewBox="0 0 200 40" preserveAspectRatio="none"><path d="M0 20 L60 20 L70 8 L80 32 L90 4 L100 36 L110 20 L200 20"/></svg><div class="sn-bar"><i></i></div><div class="sn-num">100</div>';
     // 舞台点击推进
@@ -165,8 +160,10 @@
       closePanel(p);
       if (a === 'hide') { E.setHideUI(true); return; }
       if (a === 'fullscreen') {
-        try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }
-        catch (err) { E.toast('<b>全屏</b>这个浏览器不支持；可以“添加到主屏幕”后再打开', 'item'); }
+        try {
+          if (document.fullscreenElement) document.exitFullscreen();
+          else { var fr = document.documentElement.requestFullscreen(); if (fr && fr.then) fr.then(E.lockLandscape, function () {}); }
+        } catch (err) { E.toast('<b>全屏</b>这个浏览器不支持；可以“添加到主屏幕”后再打开', 'item'); }
         return;
       }
       UI.action(a);

@@ -125,17 +125,43 @@
     D.torch = $('#fx-torch');
   }
 
-  /* 舞台按窗口等比缩放 */
+  /* 舞台按窗口等比缩放。触屏设备竖着拿时，把整个舞台顺时针转 90°，始终以横屏呈现 */
+  var isTouchDevice = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  E.rot = null;
   function fit() {
     var w = window.innerWidth, hgt = window.innerHeight;
+    if (isTouchDevice && hgt > w) {
+      var sr = Math.min(hgt / 1600, w / 900);
+      var tx = (w + 900 * sr) / 2, ty = (hgt - 1600 * sr) / 2;
+      D.stage.style.transform = 'translate(' + tx + 'px,' + ty + 'px) rotate(90deg) scale(' + sr + ')';
+      E.rot = { s: sr, tx: tx, ty: ty };
+      E.scale = sr;
+      D.stage.dataset.rot = '90';
+      return;
+    }
     var s = Math.min(w / 1600, hgt / 900);
     D.stage.style.transform = 'translate(' + ((w - 1600 * s) / 2) + 'px,' + ((hgt - 900 * s) / 2) + 'px) scale(' + s + ')';
+    E.rot = null;
     E.scale = s;
+    delete D.stage.dataset.rot;
   }
+  E.fit = fit;
+  /** 屏幕坐标 → 舞台坐标（1600×900）。旋转模式下做逆变换 */
   E.toLocal = function (evt) {
+    var t = (evt.touches && evt.touches[0]) || (evt.changedTouches && evt.changedTouches[0]) || evt;
+    if (E.rot) {
+      var vr = D.viewport.getBoundingClientRect();
+      var cx = t.clientX - vr.left, cy = t.clientY - vr.top;
+      return { x: (cy - E.rot.ty) / E.rot.s, y: (E.rot.tx - cx) / E.rot.s };
+    }
     var r = D.stage.getBoundingClientRect();
-    var t = (evt.touches && evt.touches[0]) || evt;
     return { x: (t.clientX - r.left) * 1600 / r.width, y: (t.clientY - r.top) * 900 / r.height };
+  };
+  /** 尝试让系统锁定横屏（安卓全屏 / 添加到主屏幕后生效；不支持时静默忽略） */
+  E.lockLandscape = function () {
+    try {
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function () {});
+    } catch (e) { /* 忽略 */ }
   };
 
   /* ============================================================ 美术取用 */
@@ -832,6 +858,9 @@
     buildDom();
     fit();
     window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', function () { setTimeout(fit, 120); setTimeout(fit, 500); });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+    if (isTouchDevice) document.addEventListener('pointerdown', E.lockLandscape, { once: true });
     E.program = GF.compile();
     if (E.program.errors.length) console.warn('剧本解析问题：', E.program.errors);
     applyVolume();
