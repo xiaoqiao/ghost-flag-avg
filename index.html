@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="那多手记《幽灵旗》改编 AVG：一面让日军轰炸机闻风而逃的旗，一座深藏地下的古墓。">
+<title>幽灵旗 · 那多手记 AVG</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="幽灵旗">
+<meta name="theme-color" content="#000000">
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    <div id="world">
+      <div id="layer-bg"></div>
+      <div id="layer-chars"></div>
+      <div id="layer-cg"></div>
+    </div>
+    <div id="layer-fx">
+      <div id="fx-vignette"></div>
+      <div id="fx-torch"></div>
+      <div id="fx-rain"></div>
+      <div id="fx-scratch"></div>
+      <div id="fx-grain"></div>
+      <div id="fx-label">回 忆</div>
+    </div>
+    <div id="hud">
+      <div id="hud-date"></div>
+      <div id="hud-sanity"></div>
+    </div>
+    <div id="textbox" class="hidden">
+      <div id="tb-name"></div>
+      <div id="tb-text"></div>
+      <div id="tb-next">▼</div>
+      <div id="quickmenu"></div>
+    </div>
+    <div id="choices"></div>
+    <div id="overlay"></div>
+    <div id="toasts"></div>
+    <div id="menus"></div>
+    <noscript><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#eee;font-size:32px">需要开启 JavaScript 才能游玩。</div></noscript>
+  </div>
+</div>
+
+<!-- 核心数据 -->
+<script src="js/core/dsl.js"></script>
+<script src="js/data/registry.js"></script>
+<script src="js/data/assets.js"></script>
+
+<!-- 矢量美术（插画缺失时的回退） -->
+<script src="js/art/_base.js"></script>
+<script src="js/art/characters.js"></script>
+<script src="js/art/bg_city.js"></script>
+<script src="js/art/bg_sanceng.js"></script>
+<script src="js/art/bg_homes.js"></script>
+<script src="js/art/bg_places.js"></script>
+<script src="js/art/bg_tomb.js"></script>
+<script src="js/art/bg_heart_past.js"></script>
+<script src="js/art/bg_nepal.js"></script>
+<script src="js/art/cg_b.js"></script>
+<script src="js/art/docs.js"></script>
+
+<!-- 音频 -->
+<script src="js/audio/audio.js"></script>
+
+<!-- 小游戏 -->
+<script src="js/core/gamectx.js"></script>
+<script src="js/games/photo_hunt.js"></script>
+<script src="js/games/dark_basement.js"></script>
+<script src="js/games/tunnel_forks.js"></script>
+<script src="js/games/shout.js"></script>
+<script src="js/games/resist.js"></script>
+<script src="js/games/symbol_trace.js"></script>
+<script src="js/games/despair_walk.js"></script>
+<script src="js/games/footprints.js"></script>
+<script src="js/games/madness_palm.js"></script>
+
+<!-- 剧本 -->
+<script src="js/story/ch01.js"></script>
+<script src="js/story/ch02.js"></script>
+<script src="js/story/ch03.js"></script>
+<script src="js/story/ch04.js"></script>
+<script src="js/story/ch05.js"></script>
+<script src="js/story/ch06.js"></script>
+<script src="js/story/ch07.js"></script>
+<script src="js/story/ch08.js"></script>
+<script src="js/story/ch09.js"></script>
+<script src="js/story/ch10.js"></script>
+
+<!-- 引擎 -->
+<script src="js/core/engine.js"></script>
+<script src="js/core/ui.js"></script>
+<script>
+  (function () {
+    // 胶片颗粒贴图（运行时生成，避免外部图片）
+    try {
+      var c = document.createElement('canvas'); c.width = c.height = 180;
+      var x = c.getContext('2d'), d = x.createImageData(180, 180);
+      for (var i = 0; i < d.data.length; i += 4) { var v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 22; }
+      x.putImageData(d, 0, 0);
+      document.documentElement.style.setProperty('--grain', 'url(' + c.toDataURL() + ')');
+    } catch (e) { /* 忽略 */ }
+    GF.E.boot();
+  })();
+</script>
+</body>
+</html>
