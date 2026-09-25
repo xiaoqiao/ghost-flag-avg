@@ -38,6 +38,8 @@
     setTimeout(function () { p.remove(); }, 250);
     if (p._onClose) p._onClose();
   }
+  UI.panel = panel;
+  UI.closePanel = closePanel;
   UI.closeTop = function () { if (stack.length) { closePanel(stack[stack.length - 1]); return true; } return false; };
   UI.closeAll = function () { while (stack.length) closePanel(stack[stack.length - 1]); };
 
@@ -368,10 +370,13 @@
         (k !== 'auto' ? '<span class="sl-del" data-del="' + k + '" title="删除">✕</span>' : '') + '</button>';
     }
     var canSave = mode === 'save' && E.running;
-    var html = '<div class="sl-mode"><button data-m="save"' + (mode === 'save' ? ' class="on"' : '') + (E.running ? '' : ' disabled') + '>存档</button><button data-m="load"' + (mode === 'load' ? ' class="on"' : '') + '>读档</button></div>' +
+    var html = '<div class="sl-mode"><button data-m="save"' + (mode === 'save' ? ' class="on"' : '') + (E.running ? '' : ' disabled') + '>存档</button><button data-m="load"' + (mode === 'load' ? ' class="on"' : '') + '>读档</button>' +
+      '<span class="sl-code"><button data-c="export">导出存档码</button><button data-c="import">导入存档码</button></span></div>' +
       '<div class="slots">' + slots.filter(function (k) { return !(canSave && k === 'auto'); }).map(card).join('') + '</div>';
     var p = panel('saveload', mode === 'save' ? '存档' : '读档', html);
     p.addEventListener('click', function (e) {
+      var c = e.target.closest('.sl-code button');
+      if (c) { closePanel(p); if (c.dataset.c === 'export') UI.exportCode(); else UI.importCode(); return; }
       var m = e.target.closest('.sl-mode button');
       if (m && !m.disabled) { closePanel(p); UI.saveLoad(m.dataset.m); return; }
       var del = e.target.closest('.sl-del');
@@ -412,7 +417,7 @@
       tog('easy', '简单模式', '放宽小游戏的时限与容错，并提供跳过') +
       tog('skipUnread', '快进未读文字', '关闭时快进遇到没读过的文字会停下') +
       '<label class="set-row tog"><span>美术</span><input type="checkbox" data-k="artMode"' + (st.artMode === 'svg' ? '' : ' checked') + '><i></i><small>开：插画；关：矢量剪影（更省资源）</small></label>' +
-      '<div class="btn-row"><button class="btn fs">全屏切换</button><button class="btn reset">清除全部数据</button></div>';
+      '<div class="btn-row"><button class="btn sc-exp">导出存档码</button><button class="btn sc-imp">导入存档码</button><button class="btn fs">全屏切换</button><button class="btn reset">清除全部数据</button></div>';
     var p = panel('settings', '设置', html);
     p.addEventListener('input', function (e) {
       var k = e.target.dataset.k; if (!k) return;
@@ -421,6 +426,8 @@
       E.saveSettings();
       if (k === 'artMode' && E.running) { E.setBg(E.S.stage.bg, 'cut'); }
     });
+    p.querySelector('.sc-exp').addEventListener('click', function () { closePanel(p); UI.exportCode(); });
+    p.querySelector('.sc-imp').addEventListener('click', function () { closePanel(p); UI.importCode(); });
     p.querySelector('.fs').addEventListener('click', function () {
       try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { /* 忽略 */ }
     });

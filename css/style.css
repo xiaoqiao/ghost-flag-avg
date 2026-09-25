@@ -489,3 +489,16 @@ button { font-family: inherit; }
 .rh-box button { margin-top: 34px; font: 15px var(--serif); color: rgba(239,230,210,.6); background: none; border: 1px solid rgba(239,230,210,.25); padding: 8px 18px; border-radius: 4px; }
 .rh-phone { width: 58px; height: 100px; margin: 0 auto; border: 3px solid var(--amber); border-radius: 10px; animation: rhRot 2.4s ease-in-out infinite; }
 @keyframes rhRot { 0%, 25% { transform: rotate(0); } 55%, 100% { transform: rotate(-90deg); } }
+
+/* 存档码 */
+.sl-mode .sl-code { margin-left: auto; display: flex; gap: 8px; }
+.sl-mode { align-items: center; }
+.savecode { width: 1060px; }
+.sc-tip { font: 23px/1.7 var(--serif); color: rgba(239,230,210,.85); margin: 0 0 12px; }
+.sc-sum { font: 19px var(--serif); color: var(--amber); margin-bottom: 10px; }
+.sc-code { width: 100%; height: 250px; resize: none; box-sizing: border-box; padding: 14px 16px; font: 16px/1.5 ui-monospace, Menlo, monospace; word-break: break-all;
+  color: #e9e2d0; background: rgba(0,0,0,.45); border: 1px solid rgba(224,181,106,.35); border-radius: 4px; user-select: text; -webkit-user-select: text; }
+.sc-note { font: 18px/1.6 var(--serif); color: rgba(239,230,210,.5); margin: 14px 0 0; }
+.sc-msg { min-height: 34px; margin-top: 12px; font: 22px/1.6 var(--serif); color: var(--paper); }
+.sc-msg .ok { color: #9ee6c8; margin-right: 12px; } .sc-msg .no { color: #e58b80; margin-right: 12px; }
+#stage.touch .sc-tip { font-size: 28px; } #stage.touch .sc-code { height: 300px; font-size: 20px; } #stage.touch .sc-note, #stage.touch .sc-msg { font-size: 24px; }
