@@ -5,3 +5,4 @@ CLAUDE.md
 .shots/
 __pycache__/
 .DS_Store
+NEW_GAME_PROMPT.md
