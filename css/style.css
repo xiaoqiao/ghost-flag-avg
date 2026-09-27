@@ -493,3 +493,39 @@ button { font-family: inherit; }
 .sc-msg { min-height: 34px; margin-top: 12px; font: 22px/1.6 var(--serif); color: var(--paper); }
 .sc-msg .ok { color: #9ee6c8; margin-right: 12px; } .sc-msg .no { color: #e58b80; margin-right: 12px; }
 #stage.touch .sc-tip { font-size: 28px; } #stage.touch .sc-code { height: 300px; font-size: 20px; } #stage.touch .sc-note, #stage.touch .sc-msg { font-size: 24px; }
+
+/* 账号与云存档 */
+#cloud-badge { position: absolute; right: 40px; top: 32px; z-index: 2; padding: 9px 20px; border-radius: 22px; cursor: pointer;
+  font: 22px var(--serif); letter-spacing: .06em; color: var(--paper); background: rgba(0,0,0,.5); border: 1px solid rgba(224,181,106,.5); }
+#cloud-badge:hover { color: var(--flag); border-color: var(--flag); }
+#cloud-badge.err { color: #e58b80; border-color: rgba(229,139,128,.6); }
+.account { width: 900px; }
+.ac-tip { font: 23px/1.7 var(--serif); color: rgba(239,230,210,.85); margin: 0 0 16px; }
+.ac-who { font: 30px var(--serif); margin-bottom: 12px; } .ac-who b { color: var(--amber); font-weight: normal; }
+.ac-form label { display: flex; align-items: center; gap: 18px; font: 26px var(--serif); margin: 14px 0; }
+.ac-form input { flex: 1; font: 26px var(--serif); padding: 12px 16px; color: var(--paper); background: rgba(0,0,0,.45);
+  border: 1px solid rgba(224,181,106,.4); border-radius: 4px; outline: none; user-select: text; -webkit-user-select: text; }
+.ac-form input:focus { border-color: var(--amber); }
+.ac-status { min-height: 34px; margin-top: 14px; font: 22px/1.6 var(--serif); color: rgba(239,230,210,.8); }
+.ac-status .no { color: #e58b80; }
+#stage.touch #cloud-badge { font-size: 30px; padding: 12px 26px; }
+#stage.touch .ac-tip { font-size: 28px; } #stage.touch .ac-form label, #stage.touch .ac-form input { font-size: 32px; } #stage.touch .ac-status { font-size: 26px; }
+.panel.settings .btn-row { flex-wrap: wrap; }
+.ac-switch { margin-top: 6px; font: 23px/1.7 var(--serif); color: var(--paper); }
+.ac-switch .btn-row { flex-wrap: wrap; gap: 14px; margin-top: 14px; }
+#stage.touch .ac-switch { font-size: 26px; }
+/* 手机登录表单：放在舞台外，按系统方向、真实像素显示（输入框 16px，iOS 不会自动放大） */
+.ac-sheet { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; -webkit-overflow-scrolling: touch; background: rgba(0,0,0,.75); }
+.ac-card { width: 100%; max-width: 460px; margin-top: 3vh; padding: 16px 18px 18px; color: var(--paper); font-family: var(--serif);
+  background: linear-gradient(180deg, #16151a, #0e0e11); border: 1px solid rgba(224,181,106,.35); box-shadow: 0 20px 60px rgba(0,0,0,.8); }
+.ac-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ac-head h2 { margin: 0; font-size: 19px; font-weight: normal; letter-spacing: .3em; color: var(--amber); }
+.ac-x { background: none; border: none; color: rgba(239,230,210,.7); font-size: 22px; padding: 4px 8px; cursor: pointer; }
+.ac-card .ac-tip { font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
+.ac-card .ac-form label { font-size: 16px; gap: 10px; margin: 10px 0; }
+.ac-card .ac-form input { font-size: 16px; padding: 10px 12px; min-width: 0; }
+.ac-card .btn-row { flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.ac-card .btn { font-size: 16px; letter-spacing: .1em; padding: 10px 18px; }
+.ac-card .ac-status { min-height: 22px; font-size: 15px; }
+.ac-card .ac-switch { font-size: 15px; line-height: 1.6; }
+.ac-card .sc-note { font-size: 13px; line-height: 1.6; }

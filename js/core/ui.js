@@ -87,6 +87,7 @@
       E.userAdvance();
     });
     d.stage.addEventListener('contextmenu', function (e) {
+      if (e.target.closest('input, textarea')) return; // 输入框里保留系统菜单（粘贴）
       e.preventDefault();
       if (UI.closeTop()) return;
       if (E.running && !E.blocked) E.setHideUI(!E.hideUI);
@@ -429,8 +430,10 @@
       try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { /* 忽略 */ }
     });
     p.querySelector('.reset').addEventListener('click', function () {
-      confirmBox('清除全部存档、已读记录、图鉴与设置？此操作不可撤销。', '全部清除').then(function (ok) {
+      var cloudNote = GF.cloud && GF.cloud.account ? '<br>（云端存档不受影响，之后重新登录即可取回。）' : '';
+      confirmBox('清除本机的全部存档、已读记录、图鉴与设置？此操作不可撤销。' + cloudNote, '全部清除').then(function (ok) {
         if (!ok) return;
+        if (GF.cloud && GF.cloud.reset) GF.cloud.reset(); // 先停掉云同步，免得关页前又把进度写回来
         try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ghostflag.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 忽略 */ }
         location.reload();
       });
@@ -470,7 +473,10 @@
         setTimeout(function () { o.remove(); }, 400);
         resolve();
       }
-      function key(e) { if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } }
+      function key(e) {
+        if (e.target && e.target.closest && e.target.closest('input, textarea')) return; // 正在输入框里打字
+        if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+      }
       o.addEventListener('click', function (e) { e.stopPropagation(); close(); });
       document.addEventListener('keydown', key, true);
       if (opts.autoMs) setTimeout(function () { minT = 0; close(); }, opts.autoMs);

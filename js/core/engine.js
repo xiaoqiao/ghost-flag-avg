@@ -25,7 +25,7 @@
 
   var LS = {
     get: function (k, d) { try { var v = localStorage.getItem('ghostflag.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-    set: function (k, v) { try { localStorage.setItem('ghostflag.' + k, JSON.stringify(v)); } catch (e) { /* 存储不可用时静默 */ } }
+    set: function (k, v) { try { localStorage.setItem('ghostflag.' + k, JSON.stringify(v)); return true; } catch (e) { return false; /* 存储不可用 */ } }
   };
   E.LS = LS;
 
@@ -128,8 +128,16 @@
   /* 舞台按窗口等比缩放。触屏设备竖着拿时，把整个舞台顺时针转 90°，始终以横屏呈现 */
   var isTouchDevice = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
   E.rot = null;
+  var fitSize = null; // 上次实际排版时的窗口尺寸
   function fit() {
-    var w = window.innerWidth, hgt = window.innerHeight;
+    // 触屏上在舞台内的文本框打字时，软键盘会改变窗口尺寸：保持原样，收起键盘后再重排。
+    // 真的转了屏（横竖翻转）照常重排；软键盘不会让横竖翻转
+    // 窗口比上次排版时小（键盘弹出）才冻结；键盘收起、窗口恢复就正常重排
+    var w = window.innerWidth, hgt = window.innerHeight, ae = document.activeElement;
+    var typing = ae && D.stage.contains(ae) && !ae.readOnly &&
+      (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && /^(text|password|search|email|number|tel|url)$/.test(ae.type)));
+    if (isTouchDevice && E.scale && typing && (hgt > w) === !!E.rot && fitSize && (w < fitSize[0] || hgt < fitSize[1])) return;
+    fitSize = [w, hgt];
     if (isTouchDevice && hgt > w) {
       var sr = Math.min(hgt / 1600, w / 900);
       var tx = (w + 900 * sr) / 2, ty = (hgt - 1600 * sr) / 2;
@@ -557,7 +565,10 @@
     var saves = LS.get('saves', {});
     var st = E.snapshot();
     st.checkpoint = E.S.checkpoint; // 回档点跟着存档走
-    saves[slot] = { meta: saveMeta(), state: st };
+    var meta = saveMeta(), prev = saves[slot], del = LS.get('deleted', {})[slot] || 0;
+    // 时间必须晚于这个存档位以前的任何记录（可能来自时钟偏快的另一台设备），否则云同步时会被当成旧存档
+    meta.time = Math.max(meta.time, del + 1, prev && prev.meta && prev.meta.time ? prev.meta.time + 1 : 0);
+    saves[slot] = { meta: meta, state: st };
     LS.set('saves', saves);
     return true;
   };
@@ -568,7 +579,14 @@
     E.restore(saves[slot].state);
     return true;
   };
-  E.deleteSave = function (slot) { var s = LS.get('saves', {}); delete s[slot]; LS.set('saves', s); };
+  E.deleteSave = function (slot) {
+    var s = LS.get('saves', {}), old = s[slot];
+    delete s[slot]; LS.set('saves', s);
+    // 记下被删存档自己的时间（不用本机时钟，避免设备间时钟偏差）：云同步时，不比它新的同位存档不再“复活”
+    if (old && old.meta && old.meta.time) {
+      var d = LS.get('deleted', {}); d[slot] = Math.max(d[slot] || 0, old.meta.time); LS.set('deleted', d);
+    }
+  };
   E.latestSave = function () {
     var saves = LS.get('saves', {}), best = null;
     Object.keys(saves).forEach(function (k) { if (!best || saves[k].meta.time > saves[best].meta.time) best = k; });
@@ -861,6 +879,7 @@
     window.addEventListener('orientationchange', function () { setTimeout(fit, 120); setTimeout(fit, 500); });
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
     if (isTouchDevice) document.addEventListener('pointerdown', E.lockLandscape, { once: true });
+    if (isTouchDevice) document.addEventListener('focusout', function () { setTimeout(fit, 300); });
     E.program = GF.compile();
     if (E.program.errors.length) console.warn('剧本解析问题：', E.program.errors);
     applyVolume();

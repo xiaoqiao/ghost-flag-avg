@@ -2,6 +2,7 @@
  * 幽灵旗 AVG —— 存档码（跨设备手动搬存档）
  * 导出：把本机的存档位 + 全局进度（已读、章节、结局、图鉴）压缩成一串文字 / 一个文件。
  * 导入：粘贴或选择文件；存档位按时间保留较新的，全局进度取并集。设置不随存档码走（各设备自己的偏好）。
+ * 云存档（cloud.js）也用这里的 pack / merge，并额外启用删除记录：删掉的存档位不会被更旧的副本复活。
  * 格式：GFSAVE1-<z|p>-<base64>-<校验码>，z = deflate 压缩，p = 未压缩（老浏览器回退）。
  */
 (function (root) {
@@ -31,7 +32,10 @@
     var blob = new Blob([bytes]);
     return new Response(blob.stream().pipeThrough(stream)).arrayBuffer().then(function (ab) { return new Uint8Array(ab); });
   }
-  var canZip = typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+  // 实际构造一次：有些浏览器有 CompressionStream 但不支持 deflate-raw
+  var canZip = (function () {
+    try { new CompressionStream('deflate-raw'); new DecompressionStream('deflate-raw'); return true; } catch (e) { return false; }
+  })();
 
   function encode(obj) {
     var json = new TextEncoder().encode(JSON.stringify(obj));
@@ -136,11 +140,10 @@
   function pack() {
     var saves = E.clone(E.getSaves());
     Object.keys(saves).forEach(function (k) { slim(saves[k].state); });
-    E.saveGlobal();
-    var g = E.clone(E.global);
+    var g = E.clone(E.global); // 内存里的全局进度就是最新的
     g.readRanges = readToRanges(g.read);
     delete g.read;
-    return { game: 'ghostflag', v: 1, time: Date.now(), saves: saves, global: g };
+    return { game: 'ghostflag', v: 1, time: Date.now(), saves: saves, deleted: E.LS.get('deleted', {}), global: g };
   }
   function summary(obj) {
     var n = Object.keys(obj.saves || {}).length;
@@ -148,16 +151,33 @@
     var read = g.read || rangesToRead(g.readRanges); // 只用于计数，不改动 obj
     return n + ' 个存档 · 已读 ' + Object.keys(read || {}).length + ' 行 · 解锁 ' + (g.chapters || []).length + ' 章 · 结局 ' + (g.endings || []).length + ' 个';
   }
-  function merge(obj) {
+  /* opts.tombstones：启用删除记录（云同步用；手动导入存档码不用，避免误删本机存档）
+     opts.replaced：传入数组时，收集被云端 / 导入内容替换的存档位 */
+  function merge(obj, opts) {
+    opts = opts || {};
     var local = E.getSaves();
     var changed = 0;
+    var del = opts.tombstones ? E.LS.get('deleted', {}) : {};
+    if (opts.tombstones) {
+      // 删除记录取并集（同一存档位取较晚的记录）
+      var incDel = obj.deleted || {};
+      Object.keys(incDel).forEach(function (k) { if (typeof incDel[k] === 'number' && !(del[k] >= incDel[k])) del[k] = incDel[k]; });
+    }
     Object.keys(obj.saves || {}).forEach(function (k) {
       var inc = obj.saves[k];
       if (!inc || !inc.meta || !inc.state) return;
-      expandState(inc.state);
-      if (!local[k] || (local[k].meta && inc.meta.time > local[k].meta.time)) { local[k] = inc; changed++; }
+      if (del[k] && inc.meta.time <= del[k]) return; // 删除之后没有再存过：不复活
+      if (!local[k] || (local[k].meta && inc.meta.time > local[k].meta.time)) {
+        expandState(inc.state); local[k] = inc; changed++;
+        if (opts.replaced) opts.replaced.push(k);
+      }
     });
-    E.LS.set('saves', local);
+    Object.keys(local).forEach(function (k) {
+      if (del[k] && local[k].meta && local[k].meta.time <= del[k]) { delete local[k]; changed++; }
+    });
+    // 写不进本机存储时必须中止，否则后续打包上传会用旧数据覆盖云端
+    if (!E.LS.set('saves', local)) throw new Error('本机存储不可用（浏览器可能禁止了网站存储），无法合并存档');
+    if (opts.tombstones) E.LS.set('deleted', del);
     var G = E.global, g = obj.global || {};
     if (!g.read && g.readRanges) g.read = rangesToRead(g.readRanges);
     ['chapters', 'endings', 'clues', 'docs', 'persons'].forEach(function (key) {
@@ -166,6 +186,20 @@
     Object.keys(g.read || {}).forEach(function (k) { G.read[k] = 1; });
     E.saveGlobal();
     return changed;
+  }
+
+  /* 内容指纹：对象键排序、全局列表排序、忽略打包时间。两台设备内容相同则指纹相同，用来跳过无意义的上传 */
+  function canon(obj) {
+    function norm(x, depth) {
+      if (Array.isArray(x)) return x.map(function (v) { return norm(v, depth + 1); });
+      if (!x || typeof x !== 'object') return x;
+      var o = {};
+      Object.keys(x).sort().forEach(function (k) { if (!(depth === 0 && k === 'time')) o[k] = norm(x[k], depth + 1); });
+      return o;
+    }
+    var c = norm(obj, 0);
+    if (c.global) ['chapters', 'endings', 'clues', 'docs', 'persons'].forEach(function (k) { if (Array.isArray(c.global[k])) c.global[k] = c.global[k].slice().sort(); });
+    return JSON.stringify(c);
   }
 
   /* ------------------------------------------------------------ 界面 */
@@ -242,9 +276,9 @@
       r.onload = function () { ta.value = String(r.result || '').trim(); run(ta.value); };
       r.readAsText(f);
     });
-    setTimeout(function () { ta.focus(); }, 300);
+    if (!E.D.stage.classList.contains('touch')) setTimeout(function () { ta.focus(); }, 300);
   };
 
   // 供测试使用
-  GF.saveCode = { encode: encode, decode: decode, pack: pack, merge: merge };
+  GF.saveCode = { encode: encode, decode: decode, pack: pack, merge: merge, canon: canon };
 })(typeof window !== 'undefined' ? window : globalThis);

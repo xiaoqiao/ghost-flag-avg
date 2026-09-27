@@ -1,0 +1,33 @@
+[Unit]
+Description=幽灵旗 AVG 账号与云存档服务
+After=network.target
+
+[Service]
+Type=simple
+User=ghostflag
+Group=ghostflag
+WorkingDirectory=/opt/ghostflag-api
+Environment=GF_HOST=127.0.0.1
+Environment=GF_PORT=8765
+Environment=GF_DB=/var/lib/ghostflag-api/ghostflag.db
+Environment=GF_ORIGINS=https://xiaoqiao.github.io,null,file://
+ExecStart=/usr/bin/python3 /opt/ghostflag-api/ghostflag_api.py
+Restart=on-failure
+RestartSec=3
+# 资源与沙箱：与服务器上其他服务隔离
+MemoryMax=256M
+MemorySwapMax=0
+CPUQuota=50%
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+ReadWritePaths=/var/lib/ghostflag-api
+
+[Install]
+WantedBy=multi-user.target
